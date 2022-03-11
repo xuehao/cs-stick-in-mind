@@ -12,7 +12,7 @@ using namespace std;
  * Should we have used pass-by-const-reference here? Probably. That itself
  * isn't the error, but it is related to what went wrong here.
  */
-Set<string> permutationsRec(string str, string chosen) {
+Set<string> permutationsRec(const string str, const string chosen) {
     /* Base Case: If there are no remaining characters left to consider, then
      * the only permutation possible is the single permutation consisting of
      * what we already committed to.
@@ -38,7 +38,7 @@ Set<string> permutationsRec(string str, string chosen) {
             /* Find all permutations we can make with this choice and add them into
              * the result.
              */
-            Set<string> thisOption = permutationsRec(remaining, chosen += ch);
+            Set<string> thisOption = permutationsRec(remaining, chosen + ch);
             result += thisOption;
         }
 

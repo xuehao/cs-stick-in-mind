@@ -1,19 +1,161 @@
 #include "DisasterPlanning.h"
 using namespace std;
 
-/* TODO: Refer to DisasterPlanning.h for more information about this function.
- * Then, delete this comment.
- */
-bool canBeMadeDisasterReady(const Map<string, Set<string>>& roadNetwork,
-                            int numCities,
-                            Set<string>& supplyLocations) {
-    /* TODO: Delete the next few lines and implement this function. */
-    (void) roadNetwork;
-    (void) numCities;
-    (void) supplyLocations;
+#define VERSION_2
+
+#ifdef VERSION_2 // better - reduce uncovered cities
+bool canBeMadeDisasterReadyRec(const Map<string, Set<string>> &roadNetwork, int numCities,
+                               Set<string> &supplyLocations, const Set<string> &uncoveredCities) {
+    if (uncoveredCities.size() == 0) {
+        return true;
+    } else if (numCities == 0) {
+        return false;
+    }
+
+    // Pick an uncovered city
+    string city = uncoveredCities.first();
+
+    // Option 1: supply the city itself
+    supplyLocations += city;
+    if (canBeMadeDisasterReadyRec(roadNetwork, numCities - 1, supplyLocations,
+                                  uncoveredCities - city - roadNetwork[city])) {
+        return true;
+    }
+    supplyLocations -= city; // If this branch fails, restore the initial value
+
+    // Option 2: supply the adjacent cities in turns
+    for (const string &adjacent : roadNetwork[city]) {
+        supplyLocations += adjacent;
+        if (canBeMadeDisasterReadyRec(roadNetwork, numCities - 1, supplyLocations,
+                                      uncoveredCities - adjacent - roadNetwork[adjacent])) {
+            return true;
+        }
+        supplyLocations -= adjacent; // restore the initial value
+    }
+
     return false;
 }
 
+bool canBeMadeDisasterReady(const Map<string, Set<string>> &roadNetwork, int numCities,
+                            Set<string> &supplyLocations) {
+    if (numCities < 0) {
+        error("There's no city to be made disaster ready.");
+    }
+
+    Set<string> uncoveredCities;
+    for (const string &city : roadNetwork) {
+        uncoveredCities += city;
+    }
+
+    return canBeMadeDisasterReadyRec(roadNetwork, numCities, supplyLocations, uncoveredCities);
+}
+#endif
+
+#ifdef VERSION_1 // reduce roadNetwork - right, not good idea
+bool canBeMadeDisasterReadyRec(const Map<string, Set<string>> &roadNetwork, int numCities,
+                               Set<string> &supplyLocations, const Set<string> &uncoveredCities) {
+    if (uncoveredCities.size() == 0) {
+        return true;
+    } else if (numCities == 0) {
+        return false;
+    }
+
+    // Pick an uncovered city
+    string city = uncoveredCities.first();
+
+    // Option 1: supply the city itself
+    supplyLocations += city;
+    auto remainingRoadNetwork = roadNetwork;
+    remainingRoadNetwork.remove(city);
+    if (canBeMadeDisasterReadyRec(remainingRoadNetwork, numCities - 1, supplyLocations,
+                                  uncoveredCities - city - roadNetwork[city])) { // roadNetwork
+        return true;
+    } else {
+        supplyLocations -= city; // If this branch fails, restore the initial value
+    }
+    // Option 2: supply the adjacent cities in turns
+    for (const string &adjacent : roadNetwork[city]) {
+        supplyLocations += adjacent;
+        auto remainingRoadNetwork = roadNetwork;
+        remainingRoadNetwork.remove(adjacent);
+        if (canBeMadeDisasterReadyRec(remainingRoadNetwork, numCities - 1, supplyLocations,
+                                      uncoveredCities - adjacent - roadNetwork[adjacent])) {
+            return true;
+        } else {
+            supplyLocations -= adjacent; // restore the initial value
+        }
+    }
+
+    return false;
+}
+
+bool canBeMadeDisasterReady(const Map<string, Set<string>> &roadNetwork, int numCities,
+                            Set<string> &supplyLocations) {
+    if (numCities < 0) {
+        error("There's no city to be made disaster ready.");
+    }
+
+    Set<string> uncoveredCities;
+    for (const string &city : roadNetwork) {
+        uncoveredCities += city;
+    }
+
+    return canBeMadeDisasterReadyRec(roadNetwork, numCities, supplyLocations, uncoveredCities);
+}
+#endif
+
+#ifdef VERSION_0 // reduce roadNetwork - buggy, not good idea
+bool canBeMadeDisasterReadyRec(const Map<string, Set<string>> &roadNetwork, int numCities,
+                               Set<string> &supplyLocations, const Set<string> &uncoveredCities) {
+    if (uncoveredCities.size() == 0) {
+        return true;
+    } else if (numCities == 0) {
+        return false;
+    }
+
+    // Pick an uncovered city
+    string city = roadNetwork.firstKey();
+
+    // Option 1: supply the city itself
+    supplyLocations += city;
+    auto remainingRoadNetwork = roadNetwork;
+    remainingRoadNetwork.remove(city);
+    if (canBeMadeDisasterReadyRec(remainingRoadNetwork, numCities - 1, supplyLocations,
+                                  uncoveredCities - city - remainingRoadNetwork[city])) {
+        return true;
+    } else {
+        supplyLocations -= city; // If this branch fails, restore the initial value
+    }
+    // Option 2: supply the adjacent cities in turns
+    for (const string &adjacent : roadNetwork[city]) {
+        supplyLocations += adjacent;
+        auto remainingRoadNetwork = roadNetwork;
+        remainingRoadNetwork.remove(adjacent);
+        if (canBeMadeDisasterReadyRec(remainingRoadNetwork, numCities - 1, supplyLocations,
+                                      uncoveredCities - adjacent - remainingRoadNetwork[adjacent])) {
+            return true;
+        } else {
+            supplyLocations -= adjacent; // restore the initial value
+        }
+    }
+
+    return false;
+}
+
+bool canBeMadeDisasterReady(const Map<string, Set<string>> &roadNetwork, int numCities,
+                            Set<string> &supplyLocations) {
+    if (numCities < 0) {
+        error("There's no city to be made disaster ready.");
+    }
+
+    Set<string> uncoveredCities;
+    for (const string &city : roadNetwork) {
+        uncoveredCities += city;
+    }
+
+    return canBeMadeDisasterReadyRec(roadNetwork, numCities, supplyLocations, uncoveredCities);
+}
+#endif
 
 /* * * * * * * Test Helper Functions Below This Point * * * * * */
 #include "GUI/SimpleTest.h"
@@ -53,20 +195,6 @@ bool isCovered(const string& city,
 }
 
 /* * * * * * Test Cases Below This Point * * * * * */
-
-/* TODO: Add your own custom tests here! */
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* * * * * Provided Tests Below This Point * * * * */

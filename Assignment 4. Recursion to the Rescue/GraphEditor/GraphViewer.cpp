@@ -487,7 +487,7 @@ namespace GraphEditor {
     namespace {
         /* Is this a space character? */
         bool isSpace(char32_t ch) {
-            return ch >= 0 && ch <= 127 && isspace(ch);
+            return ch <= 127 && isspace(ch);
         }
 
         /* Given a string, replaces all the spaces in the string with nonbreaking spaces.

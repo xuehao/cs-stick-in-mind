@@ -2,26 +2,38 @@ Put your answers to the debugging questions from Problem One in this file.
 
 Q1:
 
-
+    Name     Value
+----------|----------
+finish       'C'
+numDisks      5
+start        'A'
+temp         'B'
+totalMoves   N/A
 
 Q2:
 
-
+makeTheMagicHappen in TowersOfHanoiGUI.cpp
 
 Q3:
 
-
+totalMoves = 31
 
 Q4:
 
-
+totalMoves = 15
 
 Q5:
 
-
+Two-char string will trigger this issue.
 
 Q6:
 
-
+Line 41:
+    Set<string> thisOption = permutationsRec(remaining, chosen += ch);
+should be:
+    Set<string> thisOption = permutationsRec(remaining, chosen + ch);
 
 Q7:
+
+For each item in the for loop, the initial value of the function parameter
+is not same.
