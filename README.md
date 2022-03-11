@@ -1,5 +1,7 @@
 # README
 
+📔 [学习笔记](https://blog.stickmind.com/category/stanford-cs106a.html)
+
 ## Sources
 
 All materials come from [CS106A (Winter 2015)](https://web.stanford.edu/class/archive/cs/cs106a/cs106a.1154/)

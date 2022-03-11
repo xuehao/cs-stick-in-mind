@@ -10,8 +10,36 @@
 
 import stanford.karel.*;
 
-public class CollectNewspaperKarel extends Karel {
-	
-	// You fill in this part
+public class CollectNewspaperKarel extends SuperKarel {
 
+	@Override
+	public void run() {
+		moveToNewspaper();
+		pickUp();
+		returnToStartingPoint();
+	}
+
+	private void moveToNewspaper() {
+		move();
+		move();
+		turnRight();
+		move();
+		turnLeft();
+		move();
+	}
+
+	private void pickUp() {
+		pickBeeper();
+	}
+
+	private void returnToStartingPoint() {
+		turnAround();
+		move();
+		move();
+		move();
+		turnRight();
+		move();
+		turnLeft();
+		turnAround();
+	}
 }
