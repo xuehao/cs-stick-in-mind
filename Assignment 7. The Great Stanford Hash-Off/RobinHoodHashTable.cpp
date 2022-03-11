@@ -2,68 +2,171 @@
 using namespace std;
 
 RobinHoodHashTable::RobinHoodHashTable(HashFunction<string> hashFn) {
-    /* TODO: Delete this comment, then implement this function. */
-    (void) hashFn;
+    elems = new Slot[hashFn.numSlots()];
+    for (int i = 0; i < hashFn.numSlots(); i++) {
+        elems[i].distance = EMPTY_SLOT;
+    }
+    this->hashFn = hashFn;
+    numElems = 0;
 }
 
 RobinHoodHashTable::~RobinHoodHashTable() {
-    /* TODO: Delete this comment, then implement this function. */
+    delete[] elems;
 }
 
 int RobinHoodHashTable::size() const {
-    /* TODO: Delete this comment and the next line, then implement this function. */
-    return -1;
+    return numElems;
 }
 
 bool RobinHoodHashTable::isEmpty() const {
-    /* TODO: Delete this comment and the next line, then implement this function. */
+    return numElems == 0;
+}
+
+bool RobinHoodHashTable::insert(const string &elem) {
+    if (contains(elem))
+        return false;
+
+    int slot = hashFn(elem);
+    Slot tempElem{elem, 0};
+    for (int i = 0; i < hashFn.numSlots(); i++) {
+        if (slot == hashFn.numSlots())
+            slot %= hashFn.numSlots();
+        // find an empty slot
+        if (elems[slot].distance == EMPTY_SLOT) {
+            elems[slot].distance = tempElem.distance;
+            elems[slot].value = tempElem.value;
+            numElems++;
+            return true;
+        }
+        // the current slot is full and closer to home
+        if (elems[slot].distance < tempElem.distance)
+            swap(tempElem, elems[slot]);
+
+        tempElem.distance++;
+        slot++;
+    }
+
     return false;
 }
 
-bool RobinHoodHashTable::insert(const string& elem) {
-    /* TODO: Delete this comment and the next lines, then implement this function. */
-    (void) elem;
+bool RobinHoodHashTable::contains(const string &elem) const {
+    int slot = hashFn(elem);
+
+    for (int i = 0; i < hashFn.numSlots(); i++) {
+        if (slot == hashFn.numSlots())
+            slot %= hashFn.numSlots();
+        // find the elem
+        if (elems[slot].value == elem && elems[slot].distance != EMPTY_SLOT)
+            return true;
+        // find an empty slot OR closer to home than it should be
+        if (elems[slot].distance == EMPTY_SLOT || elems[slot].distance < i)
+            return false;
+
+        slot++;
+    }
+
     return false;
 }
 
-bool RobinHoodHashTable::contains(const string& elem) const {
-    /* TODO: Delete this comment and the next lines, then implement this function. */
-    (void) elem;
-    return false;
-}
+bool RobinHoodHashTable::remove(const string &elem) {
+    int slot = hashFn(elem);
 
-bool RobinHoodHashTable::remove(const string& elem) {
-    /* TODO: Delete this comment and the next lines, then implement this function. */
-    (void) elem;
+    bool delFlag = false;
+    for (int i = 0; i < hashFn.numSlots(); i++) {
+        if (slot == hashFn.numSlots())
+            slot %= hashFn.numSlots();
+        // find an empty slot OR closer to home than it should be
+        if (elems[slot].distance == EMPTY_SLOT || elems[slot].distance < i)
+            return false;
+        // find the elem
+        if (elems[slot].value == elem && elems[slot].distance != EMPTY_SLOT) {
+            elems[slot].distance = EMPTY_SLOT;
+            numElems--;
+            delFlag = true;
+            break;
+        }
+
+        slot++;
+    }
+
+    // after deletion, make backward-shift if necessary
+    if (delFlag) {
+        int nextSlot = slot + 1;
+        for (int i = 0; i < hashFn.numSlots(); i++) {
+            if (slot == hashFn.numSlots())
+                slot %= hashFn.numSlots();
+            if (nextSlot == hashFn.numSlots())
+                nextSlot %= hashFn.numSlots();
+            if (elems[nextSlot].distance > 0) {
+                swap(elems[slot], elems[nextSlot]);
+                elems[slot].distance--;
+            } else {
+                return true;
+            }
+            slot++;
+            nextSlot++;
+        }
+    }
+
     return false;
 }
 
 void RobinHoodHashTable::printDebugInfo() const {
-    /* TODO: Remove this comment and implement this function. */
+    cout << "Slots: " << hashFn.numSlots() << endl;
+    cout << "Contents: { ";
+    for (int i = 0; i < hashFn.numSlots() - 1; i++) {
+        if (elems[i].distance != EMPTY_SLOT) {
+            cout << elems[i].value << "(" << elems[i].distance << ")" << ", ";
+        } else {
+            cout << "., ";
+        }
+    }
+    if (elems[hashFn.numSlots() - 1].distance != EMPTY_SLOT) {
+        cout << elems[hashFn.numSlots() - 1].value << "(" << elems[hashFn.numSlots() - 1].distance << ")";
+    } else {
+        cout << ".";
+    }
+    cout << " }" << endl;
 }
 
 
 /* * * * * * Test Cases Below This Point * * * * * */
 #include "GUI/SimpleTest.h"
-
-/* Optional: Add your own custom tests here! */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* * * * * Provided Tests Below This Point * * * * */
 #include "Demos/Utility.h"
 #include "vector.h"
+
+STUDENT_TEST("Can insert an empty string.") {
+    RobinHoodHashTable table(Hash::random(10));
+    table.insert("");
+
+    /* Check the external interface to make sure it looks good. */
+    EXPECT_EQUAL(table.size(), 1);
+    EXPECT(!table.isEmpty());
+}
+
+STUDENT_TEST("Insert to a full table.") {
+    RobinHoodHashTable table(Hash::random(1));
+    table.insert("");
+
+    // insert to a full table
+    table.insert("A");
+
+    /* Check the external interface to make sure it looks good. */
+    EXPECT_EQUAL(table.size(), 1);
+    EXPECT(!table.isEmpty());
+}
+
+STUDENT_TEST("Remove non-exiting elem.") {
+    RobinHoodHashTable table(Hash::random(1));
+    table.insert("");
+
+    // Remove non-exiting elem
+    table.remove("A");
+
+    /* Check the external interface to make sure it looks good. */
+    EXPECT_EQUAL(table.size(), 1);
+    EXPECT(!table.isEmpty());
+}
 
 PROVIDED_TEST("Table is initially empty.") {
     RobinHoodHashTable table(Hash::random(10));
@@ -123,6 +226,7 @@ PROVIDED_TEST("Insertions work with hash collisions.") {
         EXPECT(table.insert(animal));
     }
     EXPECT_EQUAL(table.size(), toAdd.size());
+    table.printDebugInfo();
 
     /* Validate internals. The first table should look like this:
      *
@@ -1137,7 +1241,7 @@ PROVIDED_TEST("Stress Test: Inserts/searches/deletes work in expected time O(1).
 #include "Demos/Timer.h"
 #include <fstream>
 PROVIDED_TEST("Stress Test: Handles large workflows with little free space (should take at most five seconds)") {
-    SHOW_ERROR("Stress test is disabled by default. To run it, comment out line " + to_string(__LINE__) + " of " + getTail(__FILE__) + ".");
+    //SHOW_ERROR("Stress test is disabled by default. To run it, comment out line " + to_string(__LINE__) + " of " + getTail(__FILE__) + ".");
 
     Vector<string> english;
     ifstream input("res/EnglishWords.txt");
