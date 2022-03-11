@@ -3,16 +3,39 @@
 #include "queue.h"
 using namespace std;
 
-Grid<bool> floodedRegionsIn(const Grid<double>& terrain,
-                            const Vector<GridLocation>& sources,
+Grid<bool> floodedRegionsIn(const Grid<double> &terrain, const Vector<GridLocation> &sources,
                             double height) {
-    /* TODO: Delete this line and the next four lines, then implement this function. */
-    (void) terrain;
-    (void) sources;
-    (void) height;
-    return {};
-}
+    Queue<GridLocation> bfs;
+    Grid<bool> floodedRegion(terrain.numRows(), terrain.numCols(), false);
 
+    for (GridLocation item : sources) {
+        if (terrain.inBounds(item) && terrain[item] <= height) {
+            floodedRegion[item] = true;
+            bfs.enqueue(item);
+        }
+    }
+
+    while (bfs.size()) {
+        GridLocation temp = bfs.dequeue();
+
+        Vector<GridLocation> neighbors;
+        neighbors.add(GridLocation(temp.row + 1, temp.col));
+        neighbors.add(GridLocation(temp.row - 1, temp.col));
+        neighbors.add(GridLocation(temp.row, temp.col + 1));
+        neighbors.add(GridLocation(temp.row, temp.col - 1));
+
+        for (GridLocation item : neighbors) {
+            if (terrain.inBounds(item) && terrain[item] <= height) {
+                if (floodedRegion[item] == false) {
+                    floodedRegion[item] = true;
+                    bfs.enqueue(item);
+                }
+            }
+        } // end for
+    }
+
+    return floodedRegion;
+}
 
 /***** Test Cases Below This Point *****/
 PROVIDED_TEST("Nothing gets wet if there are no water sources.") {
@@ -256,4 +279,28 @@ PROVIDED_TEST("Stress test: Handles a large, empty world quickly.") {
             EXPECT_EQUAL(water[row][col], true);
         }
     }
+}
+
+STUDENT_TEST("Sources not in the given terrains.") {
+    Grid<double> world = {{3, 1, 4}, {5, 9, 2}, {5, 3, 5}};
+
+    Vector<GridLocation> sources = {{-1, -2}};
+
+    /* There are no water sources, so nothing should be underwater. */
+    Grid<bool> water = floodedRegionsIn(world, sources, 3.0);
+    Grid<bool> expected = {{false, false, false}, {false, false, false}, {false, false, false}};
+
+    EXPECT_EQUAL(water, expected);
+}
+
+STUDENT_TEST("Only one position in the terrain.") {
+    Grid<double> world = {{3}};
+
+    Vector<GridLocation> sources = {{0, 0}};
+
+    /* There are no water sources, so nothing should be underwater. */
+    Grid<bool> water = floodedRegionsIn(world, sources, 3.0);
+    Grid<bool> expected = {{true}};
+
+    EXPECT_EQUAL(water, expected);
 }

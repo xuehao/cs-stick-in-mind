@@ -1,61 +1,116 @@
 #include "RosettaStone.h"
 #include "GUI/SimpleTest.h"
+#include "error.h"
+#include "priorityqueue.h"
+#include <cmath>
 using namespace std;
 
-Map<string, double> kGramsIn(const string& str, int kGramLength) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) str;
-    (void) kGramLength;
-    return {};
+Map<string, double> kGramsIn(const string &str, int kGramLength) {
+    // deal with edge case
+    if (kGramLength <= 0) {
+        error("You can't get kGram with non-positive length.");
+    }
+
+    // deal with non-sufficent string
+    int strLen = str.length();
+    if (strLen < kGramLength)
+        return {};
+
+    // make kgram from string
+    Map<string, double> kgram = {};
+    for (int i = 0; (i + kGramLength) <= strLen; i++) { // using + to replace -
+        kgram[str.substr(i, kGramLength)]++;
+    }
+
+    return kgram;
 }
 
-Map<string, double> normalize(const Map<string, double>& input) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) input;
-    return {};
+Map<string, double> normalize(const Map<string, double> &input) {
+    // square root
+    double total = 0;
+    double sqrtInput;
+    for (const string &item : input) {
+        total += pow(input[item], 2);
+    }
+    sqrtInput = sqrt(total);
+
+    // deal with edge case
+    if (sqrtInput == 0) {
+        error("You can't normalize input with zero value");
+    }
+
+    // normalize
+    Map<string, double> normalizedKGram;
+    for (const string &item : input) {
+        normalizedKGram.put(item, input[item] / sqrtInput);
+    }
+
+    return normalizedKGram;
 }
 
-Map<string, double> topKGramsIn(const Map<string, double>& source, int numToKeep) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) source;
-    (void) numToKeep;
-    return {};
+Map<string, double> topKGramsIn(const Map<string, double> &source, int numToKeep) {
+    // deal with edge case
+    if (numToKeep < 0) {
+        error("You can't get top KGram with non-positive value.");
+    } else if (numToKeep == 0) {
+        return {};
+    } else if (numToKeep >= source.size()) {
+        return source;
+    }
+
+    // use priorityqueue to track the top weight
+    PriorityQueue<string> tempQueue;
+    for (const string &item : source) {
+        tempQueue.enqueue(item, source[item]);
+        if (tempQueue.size() > numToKeep) {
+            tempQueue.dequeue();
+        }
+    }
+
+    // create a new map using the top KGrams
+    Map<string, double> topKGrams;
+    for (int i = 0; i < numToKeep; i++) {
+        string key = tempQueue.dequeue();
+        topKGrams.put(key, source[key]);
+    }
+
+    return topKGrams;
 }
 
-double cosineSimilarityOf(const Map<string, double>& lhs, const Map<string, double>& rhs) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) lhs;
-    (void) rhs;
-    return {};
+double cosineSimilarityOf(const Map<string, double> &lhs, const Map<string, double> &rhs) {
+    double cosSim = 0.0;
+    for (const string &item : lhs) {
+        if (rhs.containsKey(item)) {
+            cosSim += lhs[item] * rhs[item];
+        }
+    }
+
+    return cosSim;
 }
 
-string guessLanguageOf(const Map<string, double>& textProfile,
-                       const Set<Corpus>& corpora) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) textProfile;
-    (void) corpora;
-    return "";
+string guessLanguageOf(const Map<string, double> &textProfile, const Set<Corpus> &corpora) {
+    // deal with edge case
+    if (corpora.size() == 0) {
+        error("There's no given language Corpus to compare.");
+    }
+
+    double targetCosSim = 0.0;
+    string language = "";
+    for (Corpus item : corpora) {
+        double tempCosSim = cosineSimilarityOf(textProfile, item.profile);
+        if (targetCosSim < tempCosSim) {
+            targetCosSim = tempCosSim;
+            language = item.name;
+        }
+    }
+
+    return language;
 }
-
-
-
 
 /* * * * *   Test Cases Below This Point   * * * * */
 
-
-
-
-PROVIDED_TEST("kGramsIn works when the text length exactly matches the k-gram length.") {
+PROVIDED_TEST(
+    "kGramsIn works when the text length exactly matches the k-gram length.") {
     Map<string, double> expected = {
         { "^_^", 1 }
     };
