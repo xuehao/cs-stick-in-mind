@@ -1,13 +1,65 @@
 #include "Apportionment.h"
+#include "HeapPQueue.h"
+#include "cmath"
 using namespace std;
 
-Map<string, int> apportion(const Map<string, int>& populations, int numSeats) {
-    /* TODO: Delete this line and the lines below it, then implement this function. */
-    (void) populations;
-    (void) numSeats;
-    return {};
+#define VERSION_2
+
+#ifdef VERSION_2
+Map<string, int> apportion(const Map<string, int> &populations, int numSeats) {
+    if (populations.size() > numSeats) {
+        error("No more seats for apportion.");
+    }
+
+    HeapPQueue pq;
+    Map<string, int> result;
+    for (const string &state : populations) {
+        pq.enqueue({state, sqrt(2) / populations[state]});
+        result[state] = 1;
+        numSeats--;
+    }
+
+    while (numSeats) {
+        auto dp = pq.dequeue();
+        result[dp.name]++;
+        pq.enqueue({dp.name, sqrt(result[dp.name] * (result[dp.name] + 1)) / populations[dp.name]});
+        numSeats--;
+    }
+
+    return result;
+}
+#endif
+
+#ifdef VERSION_1 // crash when K over 51850
+void apportionRec(const Map<string, int> &populations, int numSeats, HeapPQueue &pq, Map<string, int> &result) {
+    if (numSeats == 0) {
+        return;
+    }
+
+    auto dp = pq.dequeue();
+    result[dp.name]++;
+    pq.enqueue({dp.name, sqrt(result[dp.name] * (result[dp.name] + 1)) / populations[dp.name]});
+    apportionRec(populations, numSeats - 1, pq, result);
 }
 
+Map<string, int> apportion(const Map<string, int>& populations, int numSeats) {
+    if (populations.size() > numSeats) {
+        error("No more seats for apportion.");
+    }
+
+    HeapPQueue pq;
+    Map<string, int> result;
+    for (const string &state : populations) {
+        pq.enqueue({state, sqrt(2) / populations[state]});
+        result[state] = 1;
+        numSeats--;
+    }
+
+    apportionRec(populations, numSeats, pq, result);
+
+    return result;
+}
+#endif
 
 /* * * * * Test Cases Below This Point * * * * */
 #include "GUI/SimpleTest.h"

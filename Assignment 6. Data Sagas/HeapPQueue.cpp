@@ -2,36 +2,99 @@
 using namespace std;
 
 HeapPQueue::HeapPQueue() {
-    /* TODO: Implement this. */
+    elems = new DataPoint[INITIAL_SIZE];
+    logicalSize = 0;
+    allocatedSize = INITIAL_SIZE;
 }
 
 HeapPQueue::~HeapPQueue() {
-    /* TODO: Implement this. */
+    delete[] elems;
 }
 
 int HeapPQueue::size() const {
-    /* TODO: Delete the next line and implement this. */
-    return 0;
+    return logicalSize;
 }
 
 bool HeapPQueue::isEmpty() const {
-    /* TODO: Delete the next line and implement this. */
-    return 0;
+    return size() == 0;
 }
 
-void HeapPQueue::enqueue(const DataPoint& data) {
-    /* TODO: Delete the next line and implement this. */
-    (void) data;
+void HeapPQueue::enqueue(const DataPoint &data) {
+    // manage the memory
+    if ((logicalSize + 1) == allocatedSize) {
+        allocatedSize *= 2;
+        auto *newElems = new DataPoint[allocatedSize];
+
+        for (int i = 1; i <= logicalSize; i++) {
+            newElems[i] = elems[i];
+        }
+
+        delete[] elems;
+
+        elems = newElems;
+    }
+
+    // enqueue
+    logicalSize++;
+    elems[logicalSize] = data;
+
+    // bubble-up logic
+    for (int i = logicalSize; i / 2 != 0; i /= 2) {
+        if (elems[i].weight < elems[i / 2].weight) {
+            swap(elems[i], elems[i / 2]);
+        }
+    }
 }
 
 DataPoint HeapPQueue::peek() const {
-    /* TODO: Delete the next line and implement this. */
-    return {};
+    if (logicalSize == 0) {
+        error("Could not peek an empty queue.");
+    }
+    return elems[1];
 }
 
 DataPoint HeapPQueue::dequeue() {
-    /* TODO: Delete the next line and implement this. */
-    return {};
+    if (logicalSize == 0) {
+        error("Could not dequeue an empty queue.");
+    }
+
+    auto delElem = elems[1];
+    swap(elems[1], elems[logicalSize]);
+    logicalSize--;
+
+    // manage the memory
+    if ((logicalSize + 1) == allocatedSize / 2) {
+        allocatedSize /= 2;
+        auto *newElems = new DataPoint[allocatedSize];
+        for (int i = 1; i <= logicalSize; i++) {
+            newElems[i] = elems[i];
+        }
+        delete[] elems;
+        elems = newElems;
+    }
+
+    // bubble-down logic
+    int i = 1;
+    while ((2 * i <= logicalSize) || (2 * i + 1 <= logicalSize)) {
+        // Special case: only one child
+        if (2 * i == logicalSize) {
+            if (elems[i].weight > elems[2 * i].weight)
+                swap(elems[i], elems[2 * i]);
+            break;
+        }
+        // General case: two child
+        if (elems[2 * i].weight < elems[2 * i + 1].weight) {
+            if (elems[i].weight > elems[2 * i].weight)
+                swap(elems[i], elems[2 * i]);
+            i = 2 * i;
+        } else {
+            if (elems[i].weight > elems[2 * i + 1].weight)
+                swap(elems[i], elems[2 * i + 1]);
+            i = 2 * i + 1;
+        }
+    }
+
+    return delElem;
 }
 
 /* This function is purely for you to use during testing. You can have it do whatever
@@ -51,20 +114,46 @@ void HeapPQueue::printDebugInfo() {
 
 /* * * * * * Test Cases Below This Point * * * * * */
 
-/* TODO: Add your own custom tests here! */
+STUDENT_TEST("Shrink memory after dequeuing elements if necessary.") {
+    HeapPQueue pq;
 
+    DataPoint v1 = { "First",  1 };
+    DataPoint v2 = { "Second", 2 };
+    DataPoint v3 = { "Third",  3 };
+    DataPoint v4 = { "Fourth", 4 };
+    DataPoint v5 = { "Fifth",  5 };
+    DataPoint v6 = { "Six",  6 };
 
+    pq.enqueue(v1);
+    pq.enqueue(v2);
+    pq.enqueue(v3);
+    pq.enqueue(v4);
+    pq.enqueue(v5);
+    pq.enqueue(v6);
 
+    EXPECT_EQUAL(pq.allocatedSize, 12);
+    pq.dequeue();
+    EXPECT_EQUAL(pq.allocatedSize, 6);
+}
 
+STUDENT_TEST("Reports an error when peeking from an empty queue.") {
+    HeapPQueue pq;
 
+    EXPECT_ERROR(pq.peek());
+}
 
+STUDENT_TEST("Peeks an element.") {
+    HeapPQueue pq;
 
+    /* Add these items in this order. */
+    DataPoint one = {"First", 3.1415};
+    DataPoint two = {"Second", 2.7182};
 
+    pq.enqueue(one);
+    pq.enqueue(two);
 
-
-
-
-
+    EXPECT_EQUAL(pq.peek(), two);
+}
 
 /* * * * * Provided Tests Below This Point * * * * */
 
