@@ -1,25 +1,61 @@
 /* File: OnlyConnect.cpp
+ * Author: xuehao
  *
- * TODO: Edit these comments to describe anything interesting or noteworthy in your implementation.
+ * TODO: Edit these comments to describe anything interesting or noteworthy in
+ * your implementation.
+ *
+ * - extract a general function to test vowels.
+ * - boundary detection for the empty string
  *
  * TODO: Edit these comments to leave a puzzle for your section leader to solve!
  */
+
 #include "OnlyConnect.h"
 #include "GUI/SimpleTest.h"
+#include "strlib.h"
+#include <cctype>
 using namespace std;
 
-string onlyConnectize(string phrase) {
-    /* TODO: The next few lines just exist to make sure you don't get compiler warning messages
-     * when this function isn't implemented. Delete these lines, then implement this function.
-     */
-    (void) phrase;
-    return "";
+/**
+ * Returns true if the character ch is vowel.
+ *
+ * @param ch
+ * @return true/false
+ */
+bool isVowel(char ch) {
+    switch (ch) {
+    case 'a':
+    case 'e':
+    case 'i':
+    case 'o':
+    case 'u':
+        return true;
+        break;
+    default:
+        return false;
+    }
 }
 
+string onlyConnectize(string phrase) {
+    int len = phrase.size();
+    if (len == 0) { // special case
+        return "";
+    }
 
-
-
-
+    if (len == 1) { // simple case
+        if (!isalpha(phrase[0]) || isVowel(tolower(phrase[0]))) {
+            return "";
+        } else {
+            return toUpperCase(phrase);
+        }
+    } else { // general case
+        if (!isalpha(phrase[0]) || isVowel(tolower(phrase[0]))) {
+            return onlyConnectize(phrase.substr(1));
+        } else {
+            return toUpperCase(charToString(phrase[0])) + onlyConnectize(phrase.substr(1));
+        }
+    }
+}
 
 /* * * * * * Provided Test Cases * * * * * */
 
@@ -54,8 +90,21 @@ PROVIDED_TEST("Handles single-character inputs.") {
  * Happy testing!
  */
 
-
-
-
-
-
+STUDENT_TEST("My test case.")
+{
+    EXPECT_EQUAL(onlyConnectize(""), ""); // very small case
+    EXPECT_EQUAL(onlyConnectize("taaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaa"
+                                "geeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+                                "eeeeeeeeeeeeeeeeeeeeeeeeee"
+                                "biiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
+                                "iiiiiiiiiiiiiiiiiiiiiiiiii"
+                                "Yuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+                                "uuuuuuuuuuuuuuuuuuuuuuuuuu"
+                                "Hooooooooooooooooooooooooooooooooooooooooooooo"
+                                "oooooooooooooooooooooooooo"
+                                "Naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                 "TGBYHN"); // very large case
+    EXPECT_EQUAL(onlyConnectize(" a     \n k    \t \0"), "K");
+}

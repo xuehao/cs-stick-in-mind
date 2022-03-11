@@ -3,10 +3,19 @@
  * Q1: What do you see when you trigger a stack overflow when running the program
  *     without the debugger enabled? Write your answer below.
  *
- *
+ * A1: Output: Welcome_to_CPP.exe crashed.
  *
  * Q2: What is the sequence of values that repeats in the stack overflow? Write your
  *     answer below.
+ *
+ * A2: The repeated sequence:
+        • triggerStackOverflow(137) calls
+        • triggerStackOverflow(549) , which calls
+        • triggerStackOverflow(327) , which calls
+        • triggerStackOverflow(203) , which calls
+        • triggerStackOverflow(685) , which calls
+        • triggerStackOverflow(164) , which calls
+        • triggerStackOverflow(137) , which calls
  */
 #include "StackOverflow.h"
 
