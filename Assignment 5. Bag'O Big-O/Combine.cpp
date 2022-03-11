@@ -2,29 +2,124 @@
 #include "Combine.h"
 using namespace std;
 
-Vector<DataPoint> combine(const Vector<Vector<DataPoint>>& sequences) {
-    /* TODO: Delete the next few lines and implement this. */
-    (void) sequences;
-    return {};
+#define VERSION_2
+
+#ifdef VERSION_2 // better
+Vector<DataPoint> merge(const Vector<DataPoint> &left, const Vector<DataPoint> &right) {
+    // edge case
+    if (left.size() == 0) {
+        return right;
+    } else if (right.size() == 0) {
+        return left;
+    }
+
+    Vector<DataPoint> result;
+    int m = 0;
+    int n = 0;
+    for (int i = 0; i < left.size() + right.size(); i++) {
+        if (left[m].weight < right[n].weight) { // O(n)
+            result.add(left[m]);
+            m++;
+        } else {
+            result.add(right[n]);
+            n++;
+        }
+        if (m == left.size()) { // only do a fixed amount of work: O(n)
+            result += right.subList(n);
+            break;
+        }
+        if (n == right.size()) { // only do a fixed amount of work: O(n)
+            result += left.subList(m);
+            break;
+        }
+    }
+
+    return result;
 }
 
+Vector<DataPoint> combine(const Vector<Vector<DataPoint>> &sequences) {
+    // edge case
+    if (sequences.size() == 0) {
+        return {};
+    }
+    // base case
+    if (sequences.size() < 2) {
+        return sequences[0];
+    }
+    // recursive case
+    int half = sequences.size() / 2;
+    auto left = combine(sequences.subList(0, half));
+    auto right = combine(sequences.subList(half));
+    return merge(left, right);
+}
+#endif
+
+#ifdef VERSION_1 // not good idea
+Vector<DataPoint> merge(const Vector<DataPoint> &left, const Vector<DataPoint> &right) {
+    Vector<DataPoint> result;
+
+    if (left.size() == 0) {
+        return result + right;
+    }
+    if (right.size() == 0) {
+        return result + left;
+    }
+
+    DataPoint firstOfLeft = left[0];
+    DataPoint firstOfRight = right[0];
+    if (firstOfLeft.weight < firstOfRight.weight) {
+        result.add(firstOfLeft);
+        result += merge(left.subList(1), right);
+    } else {
+        result.add(firstOfRight);
+        result += merge(left, right.subList(1));
+    }
+
+    return result;
+}
+
+
+Vector<DataPoint> combine(const Vector<Vector<DataPoint>> &sequences) {
+    if (sequences.size() == 0) {
+        return {};
+    }
+    if (sequences.size() < 2) {
+        return sequences[0];
+    }
+
+    int half = sequences.size() / 2;
+    auto left = combine(sequences.subList(0, half));
+    auto right = combine(sequences.subList(half));
+
+    return merge(left, right);
+}
+#endif
 
 /* * * * * * Test Cases Below This Point * * * * * */
 
 /* TODO: Add your own custom tests here! */
 
+PROVIDED_TEST("Merges four single-item sequences.") {
+    DataPoint amy        = { "Amy Liu",          103 };
+    DataPoint katherine  = { "Katherine Erdman", 106 };
+    DataPoint isabel     = { "Isabel Bush",      107 };
+    DataPoint anna       = { "Anna Saplistki",   161 };
 
+    /* Try merging in several different orders. */
+    auto merged = combine({{ amy }, { katherine }, { isabel }, { anna }});
+    EXPECT_EQUAL(merged.size(), 4);
+    EXPECT_EQUAL(merged[0], amy);
+    EXPECT_EQUAL(merged[1], katherine);
+    EXPECT_EQUAL(merged[2], isabel);
+    EXPECT_EQUAL(merged[3], anna);
 
-
-
-
-
-
-
-
-
-
-
+    merged = combine({{ katherine }, { isabel }, { anna }, { amy }});
+    EXPECT_EQUAL(merged.size(), 4);
+    EXPECT_EQUAL(merged[0], amy);
+    EXPECT_EQUAL(merged[1], katherine);
+    EXPECT_EQUAL(merged[2], isabel);
+    EXPECT_EQUAL(merged[3], anna);
+}
 
 /* * * * * Provided Tests Below This Point * * * * */
 

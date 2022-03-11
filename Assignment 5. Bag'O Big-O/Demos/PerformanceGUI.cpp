@@ -312,7 +312,7 @@ namespace {
                 accumulator += maximumSingleSellProfit_v2(values);
                 timer.stop();
             },
-            linRange(10000, 100000, 10000),
+            linRange(10000, 500000, 10000),
             { 1 },
             "maximumSingleSellProfit_v2"
         },

@@ -366,3 +366,39 @@ int maximumSingleSellProfit_v2(const Vector<int>& values) {
      */
     return max({ firstHalfProfit, secondHalfProfit, secondMax - firstMin });
 }
+
+int maximumSingleSellProfit_v3(const Vector<int>& values) {
+    /* Base case: If the list has fewer than two elements, then you either can't
+     * buy or sell anything or you have to sell at the buy price. Either way you
+     * make no profit.
+     */
+    if (values.size() < 2) {
+        return 0;
+    }
+
+    int half = values.size() / 2;
+
+    /* Find the max profit buying and selling purely in the first or
+     * second half of the list.
+     */
+    int firstHalfProfit  = maximumSingleSellProfit_v2(values.subList(0, half));
+    int secondHalfProfit = maximumSingleSellProfit_v2(values.subList(half));
+
+    /* Find the best buy price in the first half and theb est buy price in the
+     * second half.
+     */
+    int firstMin = values[0];
+    for (int i = 1; i < half; i++) {
+        firstMin = min(firstMin, values[i]);
+    }
+    int secondMax = values[half];
+    for (int i = half + 1; i < values.size(); i++) {
+        secondMax = max(secondMax, values[i]);
+    }
+
+    /* The best option is either the max profit purely buying and selling in the
+     * first half, or the max profit buying and selling purely in the second half,
+     * or by buying in the first half and selling in the second.
+     */
+    return max({ firstHalfProfit, secondHalfProfit, secondMax - firstMin });
+}
