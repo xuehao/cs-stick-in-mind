@@ -8,9 +8,12 @@ using namespace std;
  * This function should run in time O(n) and should not use any containers
  * (e.g. Vector, HashSet, etc.).
  */
-void deleteNucleotides(Nucleotide* dna) {
-    /* TODO: Delete this comment and the next line and implement this function. */
-    (void) dna;
+void deleteNucleotides(Nucleotide *dna) {
+    while (dna != nullptr) {
+        Nucleotide *next = dna->next;
+        delete dna;
+        dna = next;
+    }
 }
 
 /**
@@ -21,9 +24,14 @@ void deleteNucleotides(Nucleotide* dna) {
  * (e.g. Vector, HashSet, etc.).
  */
 string fromDNA(Nucleotide* dna) {
-    /* TODO: Delete this comment and the next lines and implement this function. */
-    (void) dna;
-    return "";
+    string strDNA;
+
+    while (dna != nullptr) {
+        strDNA += dna->value;
+        dna = dna->next;
+    }
+
+    return strDNA;
 }
 
 /**
@@ -33,10 +41,51 @@ string fromDNA(Nucleotide* dna) {
  * This function should run in time O(n) and should not use any containers
  * (e.g. Vector, HashSet, etc.).
  */
-Nucleotide* toStrand(const string& str) {
-    /* TODO: Delete this comment and the next lines and implement this function. */
-    (void) str;
-    return nullptr;
+Nucleotide *toStrand(const string &str) {
+    Nucleotide *dna = nullptr;
+    Nucleotide *tail = nullptr;
+
+    for (const char &item : str) {
+        Nucleotide *newNT = new Nucleotide;
+        newNT->prev = nullptr;
+        newNT->next = nullptr;
+        newNT->value = item;
+
+        // append to dna
+        if (dna == nullptr) {
+            dna = newNT;
+            tail = newNT;
+        } else {
+            tail->next = newNT;
+            newNT->prev = tail;
+            tail = newNT;
+        }
+    }
+
+    return dna;
+}
+
+/**
+ * Determine if dna1 contains dna2
+ */
+bool isContain(Nucleotide *dna1, Nucleotide *dna2) {
+    // deal with edge case
+    if (dna1 == nullptr && dna2 == nullptr)
+        return true;
+
+    // compare each item
+    while (dna1 != nullptr && dna2 != nullptr) {
+        if (dna1->value != dna2->value)
+            return false;
+        dna1 = dna1->next;
+        dna2 = dna2->next;
+    }
+
+    // in case dna2 > dna1
+    if (dna1 == nullptr && dna2 != nullptr)
+        return false;
+
+    return true;
 }
 
 /**
@@ -49,10 +98,50 @@ Nucleotide* toStrand(const string& str) {
  * This function should not use any containers (e.g. Vector, HashSet, etc.)
  */
 Nucleotide* findFirst(Nucleotide* dna, Nucleotide* target) {
-    /* TODO: Delete this comment and the next lines and implement this function. */
-    (void) dna;
-    (void) target;
+    // deal with edge case
+    if (target == nullptr)
+        return dna;
+
+    // search for the whole dna
+    while (dna != nullptr) {
+        // if matching the first item
+        if (dna->value == target->value) {
+            // check the rest
+            if (isContain(dna, target))
+                return dna;
+        }
+        dna = dna->next;
+    }
+
     return nullptr;
+}
+
+/**
+ * A helper function for spliceFirst
+ */
+void spliceFirstHelper(Nucleotide *&dna, Nucleotide *&ptr) {
+    // splicing the mathcing part
+    Nucleotide *cur = ptr;
+    ptr = ptr->next;
+    if (cur->prev == nullptr) { // at the beginning
+        if (ptr == nullptr) {   // delete the whole
+            dna = ptr;
+            delete cur;
+        } else {
+            ptr->prev = nullptr;
+            dna = ptr;
+            delete cur;
+        }
+    } else {
+        if (ptr == nullptr) { // at the end
+            cur->prev->next = nullptr;
+            delete cur;
+        } else { // in the middle
+            cur->prev->next = cur->next;
+            cur->next->prev = cur->prev;
+            delete cur;
+        }
+    }
 }
 
 /**
@@ -66,31 +155,139 @@ Nucleotide* findFirst(Nucleotide* dna, Nucleotide* target) {
  *
  * This function should not use any containers (e.g. Vector, HashSet, etc.)
  */
-bool spliceFirst(Nucleotide*& dna, Nucleotide* target) {
-    /* TODO: Delete this comment and the next lines and implement this function. */
-    (void) dna;
-    (void) target;
+bool spliceFirst(Nucleotide *&dna, Nucleotide *target) {
+    // deal with edge case
+    if (target == nullptr)
+        return true;
+    if (dna == nullptr)
+        return false;
+
+    // search for the whole dna
+    Nucleotide *ptr = dna;
+    while (ptr != nullptr) {
+        // if matching the first item
+        if (ptr->value == target->value) {
+            // check the rest
+            if (isContain(ptr, target)) {
+                // if matching the whole target
+                while (target != nullptr) {
+                    // splicing the mathcing part
+                    spliceFirstHelper(dna, ptr);
+
+                    target = target->next;
+                }
+                return true;
+            }
+        }
+        ptr = ptr->next;
+    }
+
     return false;
 }
-
-
 
 /* * * * * * Test Cases Below This Point * * * * * */
 #include "GUI/SimpleTest.h"
 
-/* TODO: Add your own custom tests here! */
+STUDENT_TEST("fromDNA testing.") {
+    Nucleotide* dna = new Nucleotide;
+    dna->value = 'A';
+    dna->prev = nullptr;
 
+    dna->next = new Nucleotide;
+    dna->next->value = 'C';
+    dna->next->prev = dna;
+    dna->next->next = nullptr;
 
+    EXPECT_EQUAL(fromDNA(dna), "AC");
+    deleteNucleotides(dna);
+}
 
+STUDENT_TEST("isEqualDNA handles empty dnas.") {
+    Nucleotide* dna1 = nullptr;
+    Nucleotide* dna2 = nullptr;
 
+    EXPECT(isContain(dna1, dna2));
+}
 
+STUDENT_TEST("isEqualDNA handles single and equal dnas.") {
+    Nucleotide* dna1 = new Nucleotide;
+    dna1->value = 'A';
+    dna1->prev = nullptr;
+    dna1->next = nullptr;
 
+    Nucleotide* dna2 = new Nucleotide;
+    dna2->value = 'A';
+    dna2->prev = nullptr;
+    dna2->next = nullptr;
 
+    EXPECT(isContain(dna1, dna2));
+    deleteNucleotides(dna1);
+    deleteNucleotides(dna2);
+}
 
+STUDENT_TEST("isEqualDNA handles equal dna.") {
+    Nucleotide* dna1 = new Nucleotide;
+    dna1->value = 'A';
+    dna1->prev = nullptr;
+    dna1->next = nullptr;
+    dna1->next = new Nucleotide;
+    dna1->next->value = 'C';
+    dna1->next->prev = dna1;
+    dna1->next->next = nullptr;
 
+    Nucleotide* dna2 = new Nucleotide;
+    dna2->value = 'A';
+    dna2->prev = nullptr;
+    dna2->next = nullptr;
+    dna2->next = new Nucleotide;
+    dna2->next->value = 'C';
+    dna2->next->prev = dna2;
+    dna2->next->next = nullptr;
 
+    EXPECT(isContain(dna1, dna2));
+    deleteNucleotides(dna1);
+    deleteNucleotides(dna2);
+}
 
+STUDENT_TEST("isEqualDNA handles dna1 < dna2.") {
+    Nucleotide* dna1 = new Nucleotide;
+    dna1->value = 'A';
+    dna1->prev = nullptr;
+    dna1->next = nullptr;
 
+    Nucleotide* dna2 = new Nucleotide;
+    dna2->value = 'A';
+    dna2->prev = nullptr;
+    dna2->next = nullptr;
+    dna2->next = new Nucleotide;
+    dna2->next->value = 'C';
+    dna2->next->prev = dna2;
+    dna2->next->next = nullptr;
+
+    EXPECT(!isContain(dna1, dna2));
+    deleteNucleotides(dna1);
+    deleteNucleotides(dna2);
+}
+
+STUDENT_TEST("isEqualDNA handles dna2 > dna1.") {
+    Nucleotide* dna1 = new Nucleotide;
+    dna1->value = 'A';
+    dna1->prev = nullptr;
+    dna1->next = nullptr;
+
+    Nucleotide* dna2 = new Nucleotide;
+    dna2->value = 'A';
+    dna2->prev = nullptr;
+    dna2->next = nullptr;
+    dna2->next = new Nucleotide;
+    dna2->next->value = 'C';
+    dna2->next->prev = dna2;
+    dna2->next->next = nullptr;
+
+    EXPECT(isContain(dna2, dna1));
+    deleteNucleotides(dna1);
+    deleteNucleotides(dna2);
+}
 
 /* * * * * Provided Tests Below This Point * * * * */
 #include "vector.h"

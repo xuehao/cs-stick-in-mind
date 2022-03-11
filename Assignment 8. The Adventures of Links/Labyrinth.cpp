@@ -1,36 +1,46 @@
 #include "Labyrinth.h"
+#include "set.h"
 using namespace std;
 
-bool isPathToFreedom(MazeCell* start, const string& moves) {
-    /* TODO: Delete this comment and the next few lines, then implement
-     * this function.
-     */
-    (void) start;
-    (void) moves;
+bool isPathToFreedomRec(MazeCell *start, const string &moves, Set<Item> magicTools) {
+    // Collect items from current cell if possible
+    if (start->whatsHere != Item::NOTHING) {
+        magicTools.add(start->whatsHere);
+    }
+
+    // Base case: no more paths
+    if (moves.size() == 0) {
+        return magicTools.size() == 3;
+    }
+
+    // Recursive case: try next cell if possible
+    if (start->east != nullptr) {
+        if (isPathToFreedomRec(start->east, moves.substr(1), magicTools))
+            return true;
+    }
+    if (start->north != nullptr) {
+        if (isPathToFreedomRec(start->north, moves.substr(1), magicTools))
+            return true;
+    }
+    if (start->west != nullptr) {
+        if (isPathToFreedomRec(start->west, moves.substr(1), magicTools))
+            return true;
+    }
+    if (start->south != nullptr) {
+        if (isPathToFreedomRec(start->south, moves.substr(1), magicTools))
+            return true;
+    }
+
     return false;
 }
 
+bool isPathToFreedom(MazeCell* start, const string& moves) {
+    return isPathToFreedomRec(start, moves, {});
+}
 
 /* * * * * * Test Cases Below This Point * * * * * */
 #include "GUI/SimpleTest.h"
 #include "Demos/MazeGenerator.h"
-
-/* Optional: Add your own custom tests here! */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* * * * * Provided Tests Below This Point * * * * */
 
 /* Utility function to free all memory allocated for a maze. */
 void deleteMaze(const Grid<MazeCell*>& maze) {
