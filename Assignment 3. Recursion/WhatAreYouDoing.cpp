@@ -1,16 +1,73 @@
 #include "WhatAreYouDoing.h"
+#include <cctype>
+#include "strlib.h"
 using namespace std;
 
-/* TODO: Read the comments in WhatAreYouDoing.h to see what this function needs to do, then
- * delete this comment.
- *
- * Don't forget about the tokenize function defined in WhatAreYouDoing.h; you'll almost
- * certainly want to use it.
- */
-Set<string> allEmphasesOf(const string& sentence) {
-    /* TODO: Delete this line and the next one, then implement this function. */
-    (void) sentence;
-    return {};
+#define VERSION_1 // Modify MACRO to select different version
+
+#ifdef VERSION_1
+void allEmphasesOfRec(Vector<string> &token, string sofar, Set<string> &result) {
+    // Base case
+    if (token.size() == 0) {
+        return result.add(sofar);
+    }
+
+    // Recursive case
+    Vector<string> nextToken = token.subList(1, token.size() - 1);
+    if (isalpha(token[0][0])) {
+        string upper = toUpperCase(token[0]);
+        string lower = toLowerCase(token[0]);
+        allEmphasesOfRec(nextToken, sofar + lower, result);
+        allEmphasesOfRec(nextToken, sofar + upper, result);
+    } else {
+        string current = token[0];
+        allEmphasesOfRec(nextToken, sofar + current, result);
+    }
+}
+#endif
+
+#ifdef VERSION_2
+Set<string> allEmphasesOfRec(Vector<string> &token, string sofar) {
+    int remainingLen = token.size();
+
+    Set<string> result;
+
+    if (remainingLen == 0) {
+        return {sofar};
+    }
+
+    Vector<string> nextToken = token.subList(1, remainingLen - 1); // not good idea
+
+    if (isalpha(token[0][0])) {
+        string upper = toUpperCase(token[0]);
+        string lower = toLowerCase(token[0]);
+
+        result += allEmphasesOfRec(nextToken, sofar + lower);
+        result += allEmphasesOfRec(nextToken, sofar + upper); // not good idea
+
+        return result;
+    } else {
+        string current = token[0];
+
+        result += allEmphasesOfRec(nextToken, sofar + current);
+        return result;
+    }
+}
+#endif
+
+Set<string> allEmphasesOf(const string &sentence) {
+    Vector<string> token = tokenize(sentence);
+
+#ifdef VERSION_1        // better
+    Set<string> result; /* outparam */
+    allEmphasesOfRec(token, "", result);
+    return result;
+#endif
+
+#ifdef VERSION_2 // slower
+    return allEmphasesOfRec(token, "");
+    ;
+#endif
 }
 
 /* * * * * * Test Cases * * * * * */
@@ -20,18 +77,21 @@ Set<string> allEmphasesOf(const string& sentence) {
  * very small and very large cases, etc.
  */
 
+STUDENT_TEST("Enumerates non-word sentence.") {
+    Set<string> expected = {
+        "+-*/",
+    };
 
+    EXPECT_EQUAL(allEmphasesOf("+-*/"), expected);
+}
 
+STUDENT_TEST("Enumerates very small sentence.") {
+    Set<string> expected = {
+        "",
+    };
 
-
-
-
-
-
-
-
-
-
+    EXPECT_EQUAL(allEmphasesOf(""), expected);
+}
 
 /* * * * * * Test cases from the starter files below this point. * * * * * */
 

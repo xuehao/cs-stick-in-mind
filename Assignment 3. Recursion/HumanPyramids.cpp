@@ -1,41 +1,65 @@
 #include "HumanPyramids.h"
+#include "error.h"
+#include "grid.h"
 using namespace std;
 
-/* TODO: Refer to HumanPyramids.h for more information about what this function should do.
- * Then, delete this comment.
- */
-double weightOnBackOf(int row, int col, int pyramidHeight) {
-    /* TODO: Delete the next few lines and implement this function. */
-    (void) row;
-    (void) col;
-    (void) pyramidHeight;
-    return 0;
+double weightOnBackOfRec(int row, int col, int pyramidHeight, Grid<double> &table) {
+    if (row == 0 && col == 0) {
+        return 0;
+    }
+
+    if (table.get(row, col)) { // memorization
+        return table.get(row, col);
+    } else {
+        if (col == 0) {
+            table.set(row, col, 80 + weightOnBackOfRec(row - 1, col, pyramidHeight - 1, table) / 2);
+            return 80 + weightOnBackOfRec(row - 1, col, pyramidHeight - 1, table) / 2;
+        } else if (col == row) {
+            table.set(row, col,
+                      80 + weightOnBackOfRec(row - 1, col - 1, pyramidHeight - 1, table) / 2);
+            return 80 + weightOnBackOfRec(row - 1, col - 1, pyramidHeight - 1, table) / 2;
+        } else {
+            table.set(row, col,
+                      160 + weightOnBackOfRec(row - 1, col - 1, pyramidHeight - 1, table) / 2 +
+                          weightOnBackOfRec(row - 1, col, pyramidHeight - 1, table) / 2);
+            return 160 + weightOnBackOfRec(row - 1, col - 1, pyramidHeight - 1, table) / 2 +
+                   weightOnBackOfRec(row - 1, col, pyramidHeight - 1, table) / 2;
+        }
+    }
 }
 
+double weightOnBackOf(int row, int col, int pyramidHeight) {
+    // deal with egde case
+    if ((row < 0) || (col < 0) || (col > row) || (pyramidHeight < row)) {
+        error("You provide the wrong value.");
+    }
 
+    // Version 1.0 - Basic implementation
+    //    if (row == 0 && col == 0) {
+    //        return 0;
+    //    } else {
+    //        if (col == 0 || col == row) {
+    //            return 80 + weightOnBackOf(row - 1, 0, pyramidHeight - 1) / 2;
+    //        } else {
+    //            return 160 +
+    //                   weightOnBackOf(row - 1, col - 1, pyramidHeight - 1) / 2
+    //                   + weightOnBackOf(row - 1, col, pyramidHeight - 1) / 2;
+    //        }
+    //    }
 
-
-
+    // Version 2.0 - Speed up
+    Grid<double> table = {row + 1, col + 1, 0};
+    return weightOnBackOfRec(row, col, pyramidHeight, table);
+}
 
 /* * * * * * Test Cases * * * * * */
 #include "GUI/SimpleTest.h"
 
-/* TODO: Add your own tests here. You know the drill - look for edge cases, think about
- * very small and very large cases, etc.
- */
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* * * * * * Student Test Cases * * * * * */
+STUDENT_TEST("Small and large cases.") {
+    EXPECT_EQUAL(weightOnBackOf(0, 0, 5), 0);
+    EXPECT(weightOnBackOf(40, 10, 50) > 2000);
+}
 
 /* * * * * * Test cases from the starter files below this point. * * * * * */
 
@@ -51,12 +75,6 @@ PROVIDED_TEST("Function reports errors in invalid cases.") {
 }
 
 PROVIDED_TEST("Stress test: Memoization is implemented (should take under a second)") {
-    /* TODO: Yes, we are asking you to make a change to this test case! Delete the
-     * line immediately after this one - the one that starts with SHOW_ERROR - once
-     * you have implemented memoization to test whether it works correctly.
-     */
-    SHOW_ERROR("This test is configured to always fail until you delete this line from\n         HumanPyramids.cpp. Once you have implemented memoization and want\n         to check whether it works correctly, remove the indicated line.");
-
     /* Do not delete anything below this point. :-) */
 
     /* This will take a LONG time to complete if memoization isn't implemented.
@@ -75,3 +93,7 @@ PROVIDED_TEST("Stress test: Memoization is implemented (should take under a seco
 /* TODO: Add your own tests here. You know the drill - look for edge cases, think about
  * very small and very large cases, etc.
  */
+STUDENT_TEST("Small and large cases.") {
+    EXPECT_EQUAL(weightOnBackOf(0, 0, 5), 0);
+    EXPECT(weightOnBackOf(400, 200, 500) > 20000);
+}

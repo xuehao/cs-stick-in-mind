@@ -1,39 +1,194 @@
 #include "ShiftScheduling.h"
 using namespace std;
 
-/* TODO: Refer to ShiftScheduling.h for more information about what this function should do.
- * Then, delete this comment and replace it with one of your own.
+#define VERSION_2 // Modify MACRO to select different version
+
+#ifdef VERSION_3 // better
+/**
+ * @brief Calculate the value of the given schedule
+ * @param possibleSchedule
+ * @return int
  */
-Set<Shift> highestValueScheduleFor(const Set<Shift>& shifts, int maxHours) {
-    /* TODO: Delete the next few lines and implement this function. */
-    (void) shifts;
-    (void) maxHours;
-    return {};
+int valueOfSchedule(Set<Shift> schedule) {
+    int value = 0;
+    for (Shift shift : schedule) {
+        value += valueOf(shift);
+    }
+    return value;
 }
 
+/**
+ * @brief Check if the given shift overlap with the given schedule
+ * @param shift
+ * @param schedule
+ * @return true/false
+ */
+bool overlapWithSchedule(Shift shift, Set<Shift> schedule) {
+    bool overlap = false;
+    for (Shift item : schedule) {
+        if (overlapsWith(shift, item)) {
+            overlap = true;
+        }
+    }
+    return overlap;
+}
 
+Set<Shift> highestValueScheduleForRec(const Set<Shift> &shifts, int maxHours,
+                                      const Set<Shift> &sofar) {
+    if (maxHours == 0 || shifts.size() == 0) {
+        return sofar;
+    }
+
+    Shift shift = shifts.first();
+    Set<Shift> remainingShifts = shifts - shift;
+
+    auto without = highestValueScheduleForRec(remainingShifts, maxHours, sofar);
+    int value1 = valueOfSchedule(without);
+
+    int remainingHours = maxHours - lengthOf(shift);
+    if (!overlapWithSchedule(shift, sofar)) { // is overlap?
+        if (remainingHours < 0) {             // is over limit hour?
+            int value2 = valueOfSchedule(sofar);
+            return value1 > value2 ? without : sofar;
+        } else {
+            auto with = highestValueScheduleForRec(remainingShifts, remainingHours, sofar + shift);
+            int value2 = valueOfSchedule(with);
+            return value1 > value2 ? without : with;
+        }
+    }
+
+    return without;
+}
+
+Set<Shift> highestValueScheduleFor(const Set<Shift> &shifts, int maxHours) {
+    if (maxHours < 0) {
+        error("You can't provide non-positive hours.");
+    }
+
+    return highestValueScheduleForRec(shifts, maxHours, {});
+}
+#endif
+
+#ifdef VERSION_2 // better but still not good idea
+bool overlapWithSchedule(Shift shift, Set<Shift> schedule) {
+    bool overlap = false;
+    for (Shift item : schedule) {
+        if (overlapsWith(shift, item)) {
+            overlap = true;
+        }
+    }
+    return overlap;
+}
+
+Set<Set<Shift>> allPossibleSchedulesRec(const Set<Shift> &shifts, int maxHours,
+                                        const Set<Shift> &sofar) {
+    if (maxHours == 0 || shifts.size() == 0) {
+        return {sofar};
+    }
+
+    Shift shift = shifts.first();
+    int remainingHour = maxHours - lengthOf(shift);
+    Set<Shift> remainingShifts = shifts - shift;
+
+    auto without = allPossibleSchedulesRec(remainingShifts, maxHours, sofar);
+
+    if (!overlapWithSchedule(shift, sofar)) { // is overlap?
+        if (remainingHour < 0) {              // is over limit hour?
+            return without + sofar;
+        } else {
+            auto with = allPossibleSchedulesRec(remainingShifts, remainingHour, sofar + shift);
+            return with + without;
+        }
+    }
+
+    return without;
+}
+
+Set<Shift> pickHighestValueSchedule(Set<Set<Shift>> allSchedules) {
+    int highValue = 0;
+    Set<Shift> highestValueSchedule = allSchedules.first();
+    for (const Set<Shift> &schedule : allSchedules) {
+        int tempValue = 0;
+        for (Shift shift : schedule) {
+            tempValue += valueOf(shift);
+        }
+        if (tempValue > highValue) {
+            highValue = tempValue;
+            highestValueSchedule = schedule;
+        }
+    }
+    return highestValueSchedule;
+}
+
+Set<Shift> highestValueScheduleFor(const Set<Shift> &shifts, int maxHours) {
+    if (maxHours < 0) {
+        error("You can't provide non-positive hours.");
+    }
+
+    Set<Set<Shift>> allPossibleSchedules = allPossibleSchedulesRec(shifts, maxHours, {});
+
+    return pickHighestValueSchedule(allPossibleSchedules);
+}
+#endif
+
+#ifdef VERSION_1 // rough thought - not good idea
+Set<Set<Shift>> allPossibleSchedulesRec(const Set<Shift> &shifts, int maxHours, const Set<Shift> &sofar) {
+    if (maxHours == 0 || shifts.size() == 0) {
+        return {sofar};
+    }
+
+    Shift shift = shifts.first();
+    int remainingHour = maxHours - lengthOf(shift);
+    Set<Shift> remainingShifts = shifts - shift;
+
+    bool isOverlap = false;
+    for (Shift item : sofar) { // is overlap?
+        if (overlapsWith(shift, item)) {
+            isOverlap = true;
+        }
+    }
+
+    if (isOverlap) {
+        auto without = allPossibleSchedulesRec(remainingShifts, maxHours, sofar);
+        return without;
+    } else {
+        auto without = allPossibleSchedulesRec(remainingShifts, maxHours, sofar);
+        if (remainingHour < 0) { // is over limit hour?
+            auto with = allPossibleSchedulesRec(remainingShifts, 0, sofar);
+            return with + without;
+        } else {
+            auto with = allPossibleSchedulesRec(remainingShifts, remainingHour, sofar + shift);
+            return with + without;
+        }
+    }
+}
+
+Set<Shift> highestValueScheduleFor(const Set<Shift> &shifts, int maxHours) {
+    if (maxHours < 0) {
+        error("You can't provide non-positive hours.");
+    }
+
+    Set<Set<Shift>> allPossibleSchedules = allPossibleSchedulesRec(shifts, maxHours, {});
+
+    int highValue = 0;
+    Set<Shift> highestValueSchedule = allPossibleSchedules.first();
+    for (const Set<Shift> &schedule : allPossibleSchedules) {
+        int tempValue = 0;
+        for (Shift shift : schedule) {
+            tempValue += valueOf(shift);
+        }
+        if (tempValue > highValue) {
+            highValue = tempValue;
+            highestValueSchedule = schedule;
+        }
+    }
+
+    return highestValueSchedule;
+}
+#endif
 
 /* * * * * * Test Cases * * * * * */
 #include "GUI/SimpleTest.h"
-
-/* TODO: Add your own tests here. You know the drill - look for edge cases, think about
- * very small and very large cases, etc.
- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* * * * * * Test cases from the starter files below this point. * * * * * */
 #include "vector.h"
 #include "error.h"
 
@@ -49,6 +204,23 @@ Set<Shift> asSet(const Vector<Shift>& shifts) {
     return result;
 }
 
+/* TODO: Add your own tests here. You know the drill - look for edge cases, think about
+ * very small and very large cases, etc.
+ */
+STUDENT_TEST("Don't use all maxHours.") {
+    Vector<Shift> shifts = {
+        { Day::MONDAY,    10, 17, 21 }, //  7-hour shift, value is 21 ($3 / hour)
+        { Day::TUESDAY,   10, 16, 12 }, //  6-hour shift, value is 12 ($2 / hour)
+        { Day::WEDNESDAY, 10, 16, 12 }, //  6-hour shift, value is 12 ($2 / hour)
+    };
+
+    auto schedule = highestValueScheduleFor(asSet(shifts), 11);
+
+    EXPECT_EQUAL(schedule, { shifts[0] });
+}
+
+/* * * * * * Test cases from the starter files below this point. * * * * * */
+
 PROVIDED_TEST("Pick only shift if you have time for it.") {
     Set<Shift> shifts = {
         { Day::MONDAY, 9, 17, 1000 },  // Monday, 9AM - 5PM, value is 1000
@@ -58,7 +230,7 @@ PROVIDED_TEST("Pick only shift if you have time for it.") {
     EXPECT_EQUAL(highestValueScheduleFor(shifts, 24), shifts);
 }
 
-PROVIDED_TEST("Don't pick only shift if ou don't have time for it.") {
+PROVIDED_TEST("Don't pick only shift if you don't have time for it.") {
     Set<Shift> shifts = {
         { Day::MONDAY, 9, 17, 1000 },  // Monday, 9AM - 5PM, value is 1000
     };

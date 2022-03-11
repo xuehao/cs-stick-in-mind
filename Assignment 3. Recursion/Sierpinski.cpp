@@ -20,18 +20,22 @@ void drawTriangle(GWindow& window,
     window.fillPolygon({ x0, y0, x1, y1, x2, y2 });
 }
 
-/* TODO: Refer to Sierpinski.h for more information about what this function should do.
- * Then, delete this comment.
- */
-void drawSierpinskiTriangle(GWindow& window,
-                            double x0, double y0,
-                            double x1, double y1,
-                            double x2, double y2,
-                            int order) {
-    /* TODO: Delete this comment, these next lines of code, and implement this function. */
-    (void) window;
-    (void) x0; (void) y0;
-    (void) x1; (void) y1;
-    (void) x2; (void) y2;
-    (void) order;
+void drawSierpinskiTriangle(GWindow &window, double x0, double y0, double x1, double y1, double x2,
+                            double y2, int order) {
+    // deal with edge case
+    if (order < 0) {
+        error("You can't provide a negative order!");
+    }
+
+    // draw recursively
+    if (order == 0) {
+        drawTriangle(window, x0, y0, x1, y1, x2, y2);
+    } else {
+        drawSierpinskiTriangle(window, x0, y0, (x0 + x1) / 2, (y0 + y1) / 2, (x0 + x2) / 2,
+                               (y0 + y2) / 2, order - 1);
+        drawSierpinskiTriangle(window, (x0 + x1) / 2, (y0 + y1) / 2, x1, y1, (x1 + x2) / 2,
+                               (y1 + y2) / 2, order - 1);
+        drawSierpinskiTriangle(window, (x0 + x2) / 2, (y0 + y2) / 2, (x1 + x2) / 2, (y1 + y2) / 2,
+                               x2, y2, order - 1);
+    }
 }

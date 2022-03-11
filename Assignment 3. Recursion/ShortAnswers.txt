@@ -1,15 +1,40 @@
 Q1:
 
+排班相关的其他信息可能有：工作强度（workload），薪资（salary）
 
-
+Workload: 可以通过计算每小时订单量来反映。
+Salary: 通过时薪来反映
 
 Q2:
 
+代码部分需要修改限制条件：
 
+1. 条件判断部分需要增加一些：
 
+```c++
+if (!overlapWithSchedule(shift, sofar)) { // is overlap?
+    if (remainingHours < 0) {             // is over limit hour?
+        if (...) {                        // is anything else?
+            if (...) {                    // is anything more else?
+                ...
+            }
+        }
+    }
+}
+```
+
+2. 以下代码实现的排班侧重value，若有其他需求，可以替换为对应值：
+
+```c++
+int value1 = valueOfSchedule(without);    // optimize the value
+```
 
 Q3:
 
+有冲突的情况下，集体大于个人，促进社会发展。
+
+Best(Shedule 2): There is a balance between the company and the workers.
+Worst(Shedule 1): Be apt to company, because the collective interests is greater than the personal heroism.
 
 
 
