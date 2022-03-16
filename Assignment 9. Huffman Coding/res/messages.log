@@ -1,0 +1,18 @@
+Reading file C:/Users/xueha/OneDrive/cs-stick-in-mind/cs106b_2022/Assignment 9. Huffman Coding/Assignment 9/res/samples/Error_EmptyFile.txt... done!
+Compressing... 
+
+Error: error() was called: Can't compress a text with only single character.
+Reading file C:/Users/xueha/OneDrive/cs-stick-in-mind/cs106b_2022/Assignment 9. Huffman Coding/Assignment 9/res/samples/Error_AllSameCharacters.txt... done!
+Compressing... 
+
+Error: error() was called: You can't make a huffman tree with less than 2 chars.
+Reading file C:/Users/xueha/OneDrive/cs-stick-in-mind/cs106b_2022/Assignment 9. Huffman Coding/Assignment 9/res/samples/GreenEggsAndHam.txt... done!
+Compressing... done!
+Writing result to disk... done!
+
+File was saved as C:\Users\xueha\OneDrive\cs-stick-in-mind\cs106b_2022\Assignment 9. Huffman Coding\Assignment 9\res/compressed/GreenEggsAndHam.txt.huff
+
+Statistics: 
+  Original file size: 3273
+  New file size:      1707
+  Compression ratio:  52.154%

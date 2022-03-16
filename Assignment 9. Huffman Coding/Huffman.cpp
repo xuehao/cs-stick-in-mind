@@ -1,5 +1,9 @@
 #include "Huffman.h"
+#include "map.h"
+#include "priorityqueue.h"
 using namespace std;
+
+#define VERSION_2
 
 /**
  * Deallocates all nodes in a Huffman tree. We've provided this helper function
@@ -26,9 +30,42 @@ void deleteTree(EncodingTreeNode* tree) {
  * second tree as the one subtree.
  */
 EncodingTreeNode* huffmanTreeFor(const string& str) {
-    /* TODO: Delete this comment and the next few lines, then implement this. */
-    (void) str;
-    return nullptr;
+    // make char frequency from the given str
+    Map<char, int> charFreq;
+    for (const char &ch : str) {
+        charFreq[ch]++;
+    }
+
+    // deal with edge case
+    if (charFreq.size() < 2) {
+        error("You can't make a huffman tree with less than 2 chars.");
+    }
+
+    // create a priority queue
+    PriorityQueue<EncodingTreeNode *> pq;
+
+    // create leaf nodes and add to pq
+    for (const auto &key : charFreq.keys()) {
+        EncodingTreeNode *leafNode = new EncodingTreeNode;
+        leafNode->ch = key;
+        leafNode->zero = nullptr;
+        leafNode->one = nullptr;
+        pq.enqueue(leafNode, charFreq[key]);
+    }
+
+    // make huffman tree
+    while (pq.size() > 1) {
+        EncodingTreeNode *newNode = new EncodingTreeNode;
+        double newPriority = pq.peekPriority();
+        EncodingTreeNode * zero = pq.dequeue();
+        newPriority += pq.peekPriority();
+        EncodingTreeNode * one = pq.dequeue();
+        newNode->zero = zero;
+        newNode->one = one;
+        pq.enqueue(newNode, newPriority);
+    }
+
+    return pq.dequeue();
 }
 
 /**
@@ -42,10 +79,59 @@ EncodingTreeNode* huffmanTreeFor(const string& str) {
  * was encoded correctly, there are no stray bits in the Queue, etc.
  */
 string decodeText(Queue<Bit>& bits, EncodingTreeNode* tree) {
-    /* TODO: Delete this comment and the next few lines, then implement this. */
-    (void) bits;
-    (void) tree;
-    return "";
+    string text;
+    EncodingTreeNode *backup = tree;
+
+    while (bits.size() > 0) {
+        if (bits.dequeue() == 1) {
+            tree = tree->one;
+            if (tree->one == nullptr) {
+                text += tree->ch;
+                tree = backup;
+            }
+        } else {
+            tree = tree->zero;
+            if (tree->one == nullptr) {
+                text += tree->ch;
+                tree = backup;
+            }
+        }
+    }
+
+    return text;
+}
+
+#ifdef VERSION_2 // using string - good idea
+/**
+ * A helper function for encodeText.
+ *
+ * For a singe character, encode bits according to the given tree
+ */
+bool encodeChar(string &bitsStr, char argc, EncodingTreeNode *tree) {
+    // base case
+    if (tree->one == nullptr && tree->ch != argc)
+        return false;
+    if (tree->one == nullptr && tree->ch == argc)
+        return true;
+
+    // recursive case
+    EncodingTreeNode *backup = tree;
+    // option 1: zero
+    bitsStr.push_back('0');
+    if (encodeChar(bitsStr, argc, tree->zero)) {
+        return true;
+    }
+    tree = backup;
+    bitsStr.pop_back();
+
+    // option 2: one
+    bitsStr.push_back('1');
+    if (encodeChar(bitsStr, argc, tree->one)) {
+        return true;
+    }
+    bitsStr.pop_back();
+
+    return false;
 }
 
 /**
@@ -56,12 +142,96 @@ string decodeText(Queue<Bit>& bits, EncodingTreeNode* tree) {
  * are edge cases you don't have to handle. The input tree will contain all
  * characters that make up the input string.
  */
-Queue<Bit> encodeText(const string& str, EncodingTreeNode* tree) {
-    /* TODO: Delete this comment and the next few lines, then implement this. */
-    (void) str;
-    (void) tree;
-    return {};
+Queue<Bit> encodeText(const string &str, EncodingTreeNode *tree) {
+    Queue<Bit> bits;
+
+    // search tree
+    string editable = str;
+    string bitsStr;
+    while (editable.size() > 0) {
+        if (encodeChar(bitsStr, editable[0], tree))
+            editable = editable.substr(1);
+    }
+
+    // make bit queue
+    for(char ch: bitsStr) {
+        if (ch == '0')
+            bits.enqueue(0);
+        else
+            bits.enqueue(1);
+    }
+
+    return bits;
 }
+#endif
+
+#ifdef VERSION_1 // using Stack: need to reverse bits - not good idea
+/**
+ * A helper function for encodeText.
+ *
+ * For a singe character, encode bits according to the given tree
+ */
+bool encodeChar(Stack<char> &bitsStack, char argc, EncodingTreeNode *tree) {
+    // base case
+    if (tree->one == nullptr && tree->ch != argc)
+        return false;
+    if (tree->one == nullptr && tree->ch == argc)
+        return true;
+
+    // recursive case
+    EncodingTreeNode *backup = tree;
+    // option 1: zero
+    bitsStack.push('0');
+    if (encodeChar(bitsStack, argc, tree->zero)) {
+        return true;
+    }
+    tree = backup;
+    bitsStack.pop();
+
+    // option 2: one
+    bitsStack.push('1');
+    if (encodeChar(bitsStack, argc, tree->one)) {
+        return true;
+    }
+    bitsStack.pop();
+
+    return false;
+}
+
+/**
+ * Given a string and a Huffman encoding tree, encodes that text using the tree
+ * and outputs a Queue<Bit> corresponding to the encoded representation.
+ *
+ * The input tree will not be null and will not consist of a single node; these
+ * are edge cases you don't have to handle. The input tree will contain all
+ * characters that make up the input string.
+ */
+Queue<Bit> encodeText(const string &str, EncodingTreeNode *tree) {
+    Queue<Bit> bits;
+
+    // search tree
+    string editable = str;
+    Stack<char> bitsStack;
+    while (editable.size() > 0) {
+        if (encodeChar(bitsStack, editable[0], tree))
+            editable = editable.substr(1);
+    }
+
+    // make bit queue
+    Stack<char> temp;
+    while (bitsStack.size()) {
+        temp.push(bitsStack.pop());
+    }
+    while (temp.size()) {
+        if (temp.pop() == '0')
+            bits.enqueue(0);
+        else
+            bits.enqueue(1);
+    }
+
+    return bits;
+}
+#endif
 
 /**
  * Decodes the given Queue<Bit> and Queue<char> into a Huffman coding tree.
@@ -70,11 +240,21 @@ Queue<Bit> encodeText(const string& str, EncodingTreeNode* tree) {
  * represent a legal encoding of a tree, that there aren't stray characters
  * or bits in them, etc.
  */
-EncodingTreeNode* decodeTree(Queue<Bit>& bits, Queue<char>& leaves) {
-    /* TODO: Delete this comment and the next few lines, then implement this. */
-    (void) bits;
-    (void) leaves;
-    return nullptr;
+EncodingTreeNode *decodeTree(Queue<Bit> &bits, Queue<char> &leaves) {
+    EncodingTreeNode *tree = new EncodingTreeNode;
+
+    // base case
+    if (bits.dequeue() == 0) {
+        tree->ch = leaves.dequeue();
+        tree->zero = nullptr;
+        tree->one = nullptr;
+        return tree;
+    }
+
+    // recursive case: doing an inorder traversal of the tree.
+    tree->zero = decodeTree(bits, leaves);
+    tree->one = decodeTree(bits, leaves);
+    return tree;
 }
 
 /**
@@ -88,10 +268,17 @@ EncodingTreeNode* decodeTree(Queue<Bit>& bits, Queue<char>& leaves) {
  * the leaves matter, etc.
  */
 void encodeTree(EncodingTreeNode* tree, Queue<Bit>& bits, Queue<char>& leaves) {
-    /* TODO: Delete this comment and the next few lines, then implement this. */
-    (void) tree;
-    (void) bits;
-    (void) leaves;
+    // base case
+    if (tree->one == nullptr) {
+        bits.enqueue(0);
+        leaves.enqueue(tree->ch);
+        return;
+    }
+
+    // recursive case
+    bits.enqueue(1);
+    encodeTree(tree->zero, bits, leaves);
+    encodeTree(tree->one, bits, leaves);
 }
 
 /**
@@ -102,9 +289,17 @@ void encodeTree(EncodingTreeNode* tree, Queue<Bit>& bits, Queue<char>& leaves) {
  * fewer than two distinct characters in the input string.
  */
 HuffmanResult compress(const string& text) {
-    /* TODO: Delete this comment and the next few lines, then implement this. */
-    (void) text;
-    return {};
+    if (text.size() < 2) {
+        error("Can't compress a text with only single character.");
+    }
+
+    HuffmanResult result;
+    EncodingTreeNode *tree = huffmanTreeFor(text);
+    encodeTree(tree, result.treeBits, result.treeLeaves);
+    result.messageBits = encodeText(text, tree);
+    deleteTree(tree);
+
+    return result;
 }
 
 /**
@@ -118,28 +313,36 @@ HuffmanResult compress(const string& text) {
  * implementation of compress.
  */
 string decompress(HuffmanResult& file) {
-    /* TODO: Delete this comment and the next few lines, then implement this. */
-    (void) file;
-    return "";
+    EncodingTreeNode *tree = decodeTree(file.treeBits, file.treeLeaves);
+    string text = decodeText(file.messageBits, tree);
+    deleteTree(tree);
+
+    return text;
 }
 
 
 /* * * * * * Test Cases Below This Point * * * * * */
 #include "GUI/SimpleTest.h"
 
-/* TODO: Add your own custom tests here! */
+STUDENT_TEST("Can encode whitespace-prefix string.") {
+    string toEncode;
+    toEncode += ' ';
+    toEncode += 'a';
+    toEncode += 'a';
 
+    EncodingTreeNode *tree = new EncodingTreeNode{' ', new EncodingTreeNode{' ', nullptr, nullptr},
+                                                  new EncodingTreeNode{'a', nullptr, nullptr}};
 
+    /* See what bits we get back. We should get 011, since the first
+     * character has code 0 and the second has code 1.
+     */
+    Queue<Bit> bits = encodeText(toEncode, tree);
+    Queue<Bit> expected = {0, 1, 1};
 
+    EXPECT_EQUAL(bits, expected);
 
-
-
-
-
-
-
-
-
+    deleteTree(tree);
+}
 
 /* * * * * Provided Tests Below This Point * * * * */
 #include <limits>
