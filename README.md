@@ -4,7 +4,7 @@
 
 ## Sources
 
-All materials come from [CS106B (Winter 2022)](https://web.stanford.edu/class/cs106b/)
+All materials come from [CS106B (Winter 2022)](https://web.stanford.edu/class/archive/cs/cs106b/cs106b.1224/)
 
 ## Environment
 
